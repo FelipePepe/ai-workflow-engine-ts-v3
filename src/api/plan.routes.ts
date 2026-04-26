@@ -1,5 +1,4 @@
 import type { FastifyInstance } from "fastify";
-import { SelfImprovementEngine } from "../core/engine.js";
 import { TaskInputSchema } from "../schemas/task.schema.js";
 import type { ErrorResponseBody } from "../types/errors.js";
 
@@ -11,7 +10,7 @@ export function registerPlanRoutes(app: FastifyInstance): void {
       return reply.status(400).send(body);
     }
     try {
-      const result = await new SelfImprovementEngine().createPlanOnly(parsed.data);
+      const result = await app.engine.createPlanOnly(parsed.data);
       return reply.send(result);
     } catch (err) {
       const body: ErrorResponseBody = {
