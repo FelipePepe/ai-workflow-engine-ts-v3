@@ -7,6 +7,7 @@ import { MemoryStore } from "../memory/memory-store.js";
 import type { SddSpec } from "../schemas/spec.schema.js";
 import type { TaskInput } from "../schemas/task.schema.js";
 import { WorkspaceManager } from "../workspace/workspace-manager.js";
+import type { WebSocketManager } from "../websocket/websocket-manager.js";
 import { Evaluator } from "./evaluator.js";
 import { GitFlowService } from "./gitflow.js";
 import { Improver } from "./improver.js";
@@ -23,6 +24,11 @@ export class SelfImprovementEngine {
   private readonly memory = new MemoryStore();
   private readonly gitflow = new GitFlowService();
   private readonly workspaceManager = new WorkspaceManager();
+  private wsManager: WebSocketManager | null = null;
+
+  setWsManager(wsManager: WebSocketManager): void {
+    this.wsManager = wsManager;
+  }
 
   async createPlanOnly(task: TaskInput): Promise<Record<string, unknown>> {
     const runId = crypto.randomUUID().slice(0, 8);
@@ -55,46 +61,60 @@ export class SelfImprovementEngine {
     const spec = planned.spec as SddSpec;
     const plan = planned.plan as any;
 
-    const workspaces = await this.workspaceManager.createParallelWorkspaces(
-      runId,
-      ["developer", "qa", "security", "reviewer", "documentation"]
-    );
+    const ts = () => new Date().toISOString();
+    this.wsManager?.emit(runId, { type: "run_start", runId, timestamp: ts() });
 
-    const context: AgentContext = {
-      runId,
-      task,
-      discovery,
-      projectSpec,
-      spec,
-      plan,
-      dryRun: settings.dryRun || !discovery.canProceed || plan.approvalRequired,
-      branch,
-      workspaces,
-      startedAt: new Date().toISOString()
-    };
+    try {
+      const workspaces = await this.workspaceManager.createParallelWorkspaces(
+        runId,
+        ["developer", "qa", "security", "reviewer", "documentation"]
+      );
 
-    const agentResults = await this.orchestrator.runPlan(plan, context);
-    const evaluation = this.evaluator.evaluate(context, agentResults);
-    const improvements = this.improver.suggestImprovements(evaluation, discovery);
+      const context: AgentContext = {
+        runId,
+        task,
+        discovery,
+        projectSpec,
+        spec,
+        plan,
+        dryRun: settings.dryRun || !discovery.canProceed || plan.approvalRequired,
+        branch,
+        workspaces,
+        startedAt: new Date().toISOString()
+      };
 
-    const experience = {
-      runId,
-      branch,
-      workspaces,
-      task,
-      discovery,
-      projectSpec,
-      spec,
-      plan,
-      agentResults,
-      evaluation,
-      improvements,
-      gitflowPolicy: this.gitflow.policy(),
-      dryRun: context.dryRun,
-      finishedAt: new Date().toISOString()
-    };
+      const agentResults = await this.orchestrator.runPlan(plan, context);
+      for (const result of agentResults) {
+        this.wsManager?.emit(runId, { type: "agent_complete", runId, agentName: result.agentName, status: result.status, timestamp: ts() });
+      }
 
-    await this.memory.save(experience);
-    return experience;
+      const evaluation = this.evaluator.evaluate(context, agentResults);
+      const improvements = this.improver.suggestImprovements(evaluation, discovery);
+
+      const experience = {
+        runId,
+        branch,
+        workspaces,
+        task,
+        discovery,
+        projectSpec,
+        spec,
+        plan,
+        agentResults,
+        evaluation,
+        improvements,
+        gitflowPolicy: this.gitflow.policy(),
+        dryRun: context.dryRun,
+        finishedAt: new Date().toISOString()
+      };
+
+      await this.memory.save(experience);
+      this.wsManager?.emit(runId, { type: "run_finish", runId, timestamp: ts() });
+      return experience;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.wsManager?.emit(runId, { type: "error", runId, message, timestamp: ts() });
+      throw err;
+    }
   }
 }

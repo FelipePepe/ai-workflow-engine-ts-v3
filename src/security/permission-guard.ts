@@ -1,4 +1,5 @@
 import { JsonConfigLoader } from "../config/json-config-loader.js";
+import { PermissionsConfigSchema } from "../config/schemas/permissions.schema.js";
 
 export interface PermissionPolicy {
   defaultMode: string;
@@ -14,7 +15,7 @@ export class PermissionGuard {
   private readonly loader = new JsonConfigLoader();
 
   async loadPolicy(): Promise<PermissionPolicy> {
-    return this.loader.load<PermissionPolicy>("config/permissions.json");
+    return this.loader.load("config/permissions.json", PermissionsConfigSchema);
   }
 
   async assertAllowed(action: string): Promise<{ allowed: boolean; reason: string }> {
