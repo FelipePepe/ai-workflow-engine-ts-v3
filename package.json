@@ -9,7 +9,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "configure": "tsx scripts/configure-llm.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",
