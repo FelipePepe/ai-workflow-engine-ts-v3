@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const OllamaConfigSchema = z.object({
   provider: z.literal('ollama'),
   ollama: z.object({
-    baseUrl: z.string().url().default('http://localhost:11434'),
+    baseUrl: z.string().url(),
     model: z.string().min(1),
   }),
 });
