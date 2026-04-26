@@ -10,6 +10,7 @@ import { registerConfigRoutes } from "./api/config.routes.js";
 import { registerMemoryRoutes } from "./api/memory.routes.js";
 import { registerMetricsRoutes } from "./api/metrics.routes.js";
 import { registerWebSocketRoutes } from "./websocket/websocket.routes.js";
+import { pipelineRoutes } from "./api/pipeline.routes.js";
 import type { FastifyError } from "fastify";
 import type { ErrorResponseBody } from "./types/errors.js";
 import { SelfImprovementEngine } from "./core/engine.js";
@@ -48,5 +49,6 @@ registerConfigRoutes(app);
 registerMemoryRoutes(app);
 registerMetricsRoutes(app);
 registerWebSocketRoutes(app);
+await pipelineRoutes(app, engine);
 
 await app.listen({ port: settings.port, host: "0.0.0.0" });

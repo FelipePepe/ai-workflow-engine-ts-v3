@@ -7,6 +7,7 @@ import { settings } from "../config/settings.js";
 import { MemoryStore } from "../memory/memory-store.js";
 import type { SddSpec } from "../schemas/spec.schema.js";
 import type { TaskInput } from "../schemas/task.schema.js";
+import type { IdeaInput, PipelineResult } from "../schemas/pipeline.schema.js";
 import { WorkspaceManager } from "../workspace/workspace-manager.js";
 import type { WebSocketManager } from "../websocket/websocket-manager.js";
 import { Evaluator } from "./evaluator.js";
@@ -14,6 +15,7 @@ import { GitFlowService } from "./gitflow.js";
 import { Improver } from "./improver.js";
 import { AgentOrchestrator } from "./orchestrator.js";
 import { Planner } from "./planner.js";
+import { PipelineOrchestrator } from "./pipeline-orchestrator.js";
 
 export class SelfImprovementEngine {
   private readonly discoveryAgent = new DiscoveryAgent();
@@ -34,6 +36,11 @@ export class SelfImprovementEngine {
 
   setWsManager(wsManager: WebSocketManager): void {
     this.wsManager = wsManager;
+  }
+
+  async runPipeline(idea: IdeaInput): Promise<PipelineResult> {
+    const pipeline = new PipelineOrchestrator(this.llmClient, this.wsManager);
+    return pipeline.run(idea);
   }
 
   async createPlanOnly(task: TaskInput): Promise<Record<string, unknown>> {
