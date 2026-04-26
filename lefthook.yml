@@ -1,0 +1,13 @@
+pre-commit:
+  parallel: true
+  commands:
+    gitleaks:
+      run: gitleaks protect --staged --redact -v
+    typecheck:
+      glob: "src/**/*.ts"
+      run: npx tsc --noEmit
+
+pre-push:
+  commands:
+    test:
+      run: npm test

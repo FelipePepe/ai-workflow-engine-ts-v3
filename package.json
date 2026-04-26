@@ -10,7 +10,8 @@
     "start": "node dist/server.js",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "configure": "tsx scripts/configure-llm.ts"
+    "configure": "tsx scripts/configure-llm.ts",
+    "prepare": "lefthook install"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",
@@ -22,6 +23,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@evilmartians/lefthook": "^2.1.6",
     "@types/node": "^22.10.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
