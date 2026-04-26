@@ -1,0 +1,19 @@
+{
+  "defaultMode": "sandbox",
+  "allowWrite": false,
+  "allowShell": false,
+  "allowNetwork": false,
+  "allowDelete": false,
+  "protectedBranches": [
+    "main",
+    "master",
+    "develop"
+  ],
+  "requireHumanApprovalFor": [
+    "production_deploy",
+    "delete_files",
+    "modify_secrets",
+    "change_permissions",
+    "architecture_change"
+  ]
+}

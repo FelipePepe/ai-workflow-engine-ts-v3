@@ -1,0 +1,27 @@
+{
+  "planMode": {
+    "enabled": true,
+    "requirePlanApproval": false,
+    "maxPlanIterations": 3
+  },
+  "agents": {
+    "maxParallelAgents": 5,
+    "defaultFlow": [
+      "developer",
+      "qa",
+      "security",
+      "reviewer",
+      "documentation"
+    ]
+  },
+  "limits": {
+    "maxRetries": 2,
+    "maxFilesPerRun": 20,
+    "maxShellCommandsPerRun": 10,
+    "maxExecutionSeconds": 300
+  },
+  "search": {
+    "preferGlobGrep": true,
+    "allowRag": false
+  }
+}

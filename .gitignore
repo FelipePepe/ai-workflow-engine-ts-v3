@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+data/memory.json
+data/runs/
+data/profile/default-profile.json
+.ai-workspaces/
+coverage/
+.vitest/

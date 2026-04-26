@@ -1,0 +1,28 @@
+{
+  "patterns": [
+    {
+      "id": "avoid-unvalidated-input",
+      "description": "Toda entrada externa debe validarse antes de usarse.",
+      "severity": "high",
+      "matchHints": [
+        "request.body",
+        "query",
+        "params"
+      ],
+      "recommendation": "Validar con Zod u otro schema validator."
+    },
+    {
+      "id": "avoid-secret-logging",
+      "description": "No registrar secretos, tokens, passwords ni cabeceras sensibles.",
+      "severity": "critical",
+      "matchHints": [
+        "console.log",
+        "logger",
+        "password",
+        "token",
+        "authorization"
+      ],
+      "recommendation": "Redactar o eliminar datos sensibles de logs."
+    }
+  ]
+}

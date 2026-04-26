@@ -1,0 +1,12 @@
+{
+  "projectType": "api",
+  "language": "typescript",
+  "framework": "fastify",
+  "architecture": "layered",
+  "database": "unknown",
+  "qualityLevel": "production",
+  "securityLevel": "high",
+  "deploymentTarget": "docker",
+  "testingStrategy": "tdd-bdd",
+  "observability": true
+}
