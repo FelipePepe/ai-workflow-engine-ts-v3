@@ -1,7 +1,8 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import websocket from "@fastify/websocket";
-import { settings } from "./config/settings.js";
+import { settings, loadLlmConfig } from "./config/settings.js";
+import { createLlmClient } from "./llm/llm-factory.js";
 import { registerDiscoveryRoutes } from "./api/discovery.routes.js";
 import { registerPlanRoutes } from "./api/plan.routes.js";
 import { registerTaskRoutes } from "./api/tasks.routes.js";
@@ -28,7 +29,9 @@ app.setErrorHandler((error: FastifyError, _request, reply) => {
 await app.register(cors);
 await app.register(websocket);
 
-const engine = new SelfImprovementEngine();
+const llmConfig = await loadLlmConfig().catch(() => null);
+const llmClient = llmConfig ? createLlmClient(llmConfig) : null;
+const engine = new SelfImprovementEngine(llmClient);
 engine.setWsManager(websocketManager);
 app.decorate("engine", engine);
 

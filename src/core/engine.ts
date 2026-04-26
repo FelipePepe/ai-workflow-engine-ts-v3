@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import type { AgentContext } from "../agents/base-agent.js";
 import { DiscoveryAgent } from "../agents/discovery-agent.js";
 import { SpecAgent } from "../agents/spec-agent.js";
+import type { LlmClient } from "../llm/llm-client.js";
 import { settings } from "../config/settings.js";
 import { MemoryStore } from "../memory/memory-store.js";
 import type { SddSpec } from "../schemas/spec.schema.js";
@@ -16,15 +17,20 @@ import { Planner } from "./planner.js";
 
 export class SelfImprovementEngine {
   private readonly discoveryAgent = new DiscoveryAgent();
-  private readonly specAgent = new SpecAgent();
+  private readonly specAgent: SpecAgent;
   private readonly planner = new Planner();
-  private readonly orchestrator = new AgentOrchestrator();
+  private readonly orchestrator: AgentOrchestrator;
   private readonly evaluator = new Evaluator();
   private readonly improver = new Improver();
   private readonly memory = new MemoryStore();
   private readonly gitflow = new GitFlowService();
   private readonly workspaceManager = new WorkspaceManager();
   private wsManager: WebSocketManager | null = null;
+
+  constructor(private readonly llmClient: LlmClient | null = null) {
+    this.specAgent = new SpecAgent(llmClient);
+    this.orchestrator = new AgentOrchestrator(llmClient);
+  }
 
   setWsManager(wsManager: WebSocketManager): void {
     this.wsManager = wsManager;

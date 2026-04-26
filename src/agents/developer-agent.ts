@@ -1,5 +1,8 @@
 import type { AgentContext, BaseAgent } from "./base-agent.js";
 import type { ProjectSpec } from "../schemas/project-spec.schema.js";
+import type { TaskInput } from "../schemas/task.schema.js";
+import type { SddSpec } from "../schemas/spec.schema.js";
+import type { LlmClient } from "../llm/llm-client.js";
 import { SearchTools } from "../tools/search-tools.js";
 import { PermissionGuard } from "../security/permission-guard.js";
 
@@ -8,12 +11,14 @@ export class DeveloperAgent implements BaseAgent {
   private readonly search = new SearchTools();
   private readonly permissions = new PermissionGuard();
 
+  constructor(private readonly llmClient: LlmClient | null = null) {}
+
   async run(context: AgentContext): Promise<Record<string, unknown>> {
     const projectSpec = context.projectSpec as ProjectSpec;
     const candidateFiles = await this.search.glob(["src/**/*.ts", "tests/**/*.ts"]);
     const permission = await this.permissions.assertAllowed("write_file");
 
-    return {
+    const mock = {
       summary: `Plan de implementación simulado para ${projectSpec.language}/${projectSpec.framework}.`,
       searchedFiles: candidateFiles.slice(0, 20),
       filesChanged: permission.allowed ? this.suggestFiles(projectSpec) : [],
@@ -26,6 +31,32 @@ export class DeveloperAgent implements BaseAgent {
       ],
       dryRun: context.dryRun
     };
+
+    if (!this.llmClient) {
+      return { ...mock, llm: "not configured, using mock output" };
+    }
+
+    try {
+      const raw = await this.llmClient.complete(this.buildPrompt(context, projectSpec));
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      return { ...mock, ...parsed, searchedFiles: candidateFiles.slice(0, 20), permission, dryRun: context.dryRun, llm: "ok" };
+    } catch {
+      return { ...mock, llm: "error, using mock output" };
+    }
+  }
+
+  private buildPrompt(context: AgentContext, projectSpec: ProjectSpec): string {
+    const task = context.task as TaskInput;
+    const spec = context.spec as SddSpec | undefined;
+    return JSON.stringify({
+      role: "senior developer",
+      language: projectSpec.language,
+      framework: projectSpec.framework,
+      architecture: projectSpec.architecture,
+      task: { title: task.title, description: task.description, constraints: task.constraints },
+      spec: spec ? { feature: spec.feature, functionalRequirements: spec.functionalRequirements, securityRequirements: spec.securityRequirements } : null,
+      instruction: "Respond ONLY with valid JSON: { \"summary\": string, \"filesChanged\": string[], \"codeNotes\": string[], \"risks\": string[] }"
+    });
   }
 
   private suggestFiles(projectSpec: ProjectSpec): string[] {
