@@ -7,7 +7,8 @@ describe("SelfImprovementEngine V3", () => {
       title: "Crear endpoint de prueba",
       description: "Crear una API en TypeScript con Fastify",
       constraints: ["Debe incluir tests"],
-      priority: "low"
+      priority: "low",
+      taskType: "new_project"
     });
 
     expect(result).toHaveProperty("plan");
@@ -19,7 +20,8 @@ describe("SelfImprovementEngine V3", () => {
       title: "Crear endpoint de prueba",
       description: "Crear una API en TypeScript con Fastify",
       constraints: ["Debe incluir tests"],
-      priority: "low"
+      priority: "low",
+      taskType: "new_project"
     });
 
     expect(result).toHaveProperty("evaluation");

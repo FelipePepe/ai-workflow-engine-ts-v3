@@ -15,7 +15,8 @@ export class DeveloperAgent implements BaseAgent {
 
   async run(context: AgentContext): Promise<Record<string, unknown>> {
     const projectSpec = context.projectSpec as ProjectSpec;
-    const candidateFiles = await this.search.glob(["src/**/*.ts", "tests/**/*.ts"]);
+    const workspacePath = context.workspacePath as string | undefined;
+    const candidateFiles = await this.search.glob(["src/**/*.ts", "tests/**/*.ts"], workspacePath);
     const permission = await this.permissions.assertAllowed("write_file");
 
     const mock = {

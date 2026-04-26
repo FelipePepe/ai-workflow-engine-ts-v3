@@ -1,6 +1,6 @@
 {
   "name": "ai-workflow-engine-ts-v3-json",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "AI Workflow Engine TypeScript V3 with JSON config, Plan Mode, parallel workspaces, sandbox permissions and review-pattern learning",
   "type": "module",
   "main": "dist/server.js",
