@@ -4,17 +4,22 @@ import { DocumentationAgent } from "../agents/documentation-agent.js";
 import { QaAgent } from "../agents/qa-agent.js";
 import { ReviewerAgent } from "../agents/reviewer-agent.js";
 import { SecurityAgent } from "../agents/security-agent.js";
+import type { LlmClient } from "../llm/llm-client.js";
 import type { ExecutionPlan } from "../schemas/plan.schema.js";
 import type { AgentResult } from "../schemas/result.schema.js";
 
 export class AgentOrchestrator {
-  private readonly agents: Record<string, BaseAgent> = {
-    developer: new DeveloperAgent(),
-    qa: new QaAgent(),
-    security: new SecurityAgent(),
-    reviewer: new ReviewerAgent(),
-    documentation: new DocumentationAgent()
-  };
+  private readonly agents: Record<string, BaseAgent>;
+
+  constructor(llmClient: LlmClient | null = null) {
+    this.agents = {
+      developer: new DeveloperAgent(llmClient),
+      qa: new QaAgent(llmClient),
+      security: new SecurityAgent(llmClient),
+      reviewer: new ReviewerAgent(),
+      documentation: new DocumentationAgent(llmClient)
+    };
+  }
 
   async runPlan(plan: ExecutionPlan, context: AgentContext): Promise<AgentResult[]> {
     const results: AgentResult[] = [];
