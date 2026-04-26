@@ -12,6 +12,7 @@ import { registerWebSocketRoutes } from "./websocket/websocket.routes.js";
 import type { FastifyError } from "fastify";
 import type { ErrorResponseBody } from "./types/errors.js";
 import { SelfImprovementEngine } from "./core/engine.js";
+import { websocketManager } from "./websocket/websocket-manager.js";
 
 const app = Fastify({ logger: true });
 
@@ -27,7 +28,9 @@ app.setErrorHandler((error: FastifyError, _request, reply) => {
 await app.register(cors);
 await app.register(websocket);
 
-app.decorate("engine", new SelfImprovementEngine());
+const engine = new SelfImprovementEngine();
+engine.setWsManager(websocketManager);
+app.decorate("engine", engine);
 
 app.get("/", async () => ({
   name: settings.appName,
