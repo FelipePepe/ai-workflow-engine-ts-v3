@@ -64,12 +64,16 @@ export class PipelineOrchestrator {
     const executionAgentCtx = this.bridgeToAgentContext(runId, ctx, syntheticTask);
     const planner = await import("./planner.js");
     const plan = await new planner.Planner().createPlan(ctx.spec as unknown as SddSpec, {
+      projectType: "api",
       language: "typescript",
       framework: "fastify",
       architecture: "hexagonal",
+      database: "unknown",
       qualityLevel: "production",
+      securityLevel: "high",
+      deploymentTarget: "unknown",
       testingStrategy: "tdd-bdd",
-      securityLevel: "high"
+      observability: true
     });
     const agentResults = await this.execution.runPlan(plan, executionAgentCtx);
 
@@ -110,12 +114,16 @@ export class PipelineOrchestrator {
         priority: "medium"
       },
       projectSpec: {
+        projectType: "api",
         language: "typescript",
         framework: "fastify",
         architecture: "hexagonal",
+        database: "unknown",
         qualityLevel: "production",
+        securityLevel: "high",
+        deploymentTarget: "unknown",
         testingStrategy: "tdd-bdd",
-        securityLevel: "high"
+        observability: true
       },
       dryRun: false,
       branch: `feature/${runId}`
