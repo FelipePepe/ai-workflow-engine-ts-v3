@@ -1,11 +1,24 @@
 import type { FastifyInstance } from "fastify";
 import { SelfImprovementEngine } from "../core/engine.js";
 import { TaskInputSchema } from "../schemas/task.schema.js";
+import type { ErrorResponseBody } from "../types/errors.js";
 
 export function registerPlanRoutes(app: FastifyInstance): void {
   app.post("/plan/create", async (request, reply) => {
     const parsed = TaskInputSchema.safeParse(request.body);
-    if (!parsed.success) return reply.status(400).send({ error: "Invalid task input", details: parsed.error.flatten() });
-    return new SelfImprovementEngine().createPlanOnly(parsed.data);
+    if (!parsed.success) {
+      const body: ErrorResponseBody = { error: "Invalid task input", code: "VALIDATION_ERROR", details: parsed.error.flatten() };
+      return reply.status(400).send(body);
+    }
+    try {
+      const result = await new SelfImprovementEngine().createPlanOnly(parsed.data);
+      return reply.send(result);
+    } catch (err) {
+      const body: ErrorResponseBody = {
+        error: err instanceof Error ? err.message : String(err),
+        code: "INTERNAL_ERROR",
+      };
+      return reply.status(500).send(body);
+    }
   });
 }
