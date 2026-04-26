@@ -68,7 +68,7 @@ export class PipelineOrchestrator {
       framework: "fastify",
       architecture: "hexagonal",
       qualityLevel: "production",
-      testingStrategy: ["unit", "bdd"],
+      testingStrategy: "tdd-bdd",
       securityLevel: "high"
     });
     const agentResults = await this.execution.runPlan(plan, executionAgentCtx);
@@ -114,7 +114,7 @@ export class PipelineOrchestrator {
         framework: "fastify",
         architecture: "hexagonal",
         qualityLevel: "production",
-        testingStrategy: ["unit", "bdd"],
+        testingStrategy: "tdd-bdd",
         securityLevel: "high"
       },
       dryRun: false,

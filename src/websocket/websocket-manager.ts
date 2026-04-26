@@ -4,7 +4,8 @@ export type WsEvent =
   | { type: "run_start"; runId: string; timestamp: string }
   | { type: "agent_complete"; runId: string; agentName: string; status: string; timestamp: string }
   | { type: "run_finish"; runId: string; timestamp: string }
-  | { type: "error"; runId: string; message: string; timestamp: string };
+  | { type: "error"; runId: string; message: string; timestamp: string }
+  | { type: "pipeline_stage"; stage: string; runId: string; timestamp: string };
 
 export class WebSocketManager {
   private readonly connections = new Map<string, Set<WebSocket>>();
