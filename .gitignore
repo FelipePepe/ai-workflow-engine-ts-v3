@@ -7,3 +7,4 @@ data/profile/default-profile.json
 .ai-workspaces/
 coverage/
 .vitest/
+config/llm.json
