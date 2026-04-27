@@ -1,4 +1,5 @@
 import { JsonConfigLoader } from "../config/json-config-loader.js";
+import { AiConfigSchema } from "../config/schemas/ai.schema.js";
 import type { ExecutionPlan } from "../schemas/plan.schema.js";
 import type { ProjectSpec } from "../schemas/project-spec.schema.js";
 import type { SddSpec } from "../schemas/spec.schema.js";
@@ -14,7 +15,7 @@ export class Planner {
   private readonly loader = new JsonConfigLoader();
 
   async createPlan(spec: SddSpec, projectSpec: ProjectSpec): Promise<ExecutionPlan> {
-    const aiConfig = await this.loader.load<AiConfig>("config/ai.config.json");
+    const aiConfig = await this.loader.load("config/ai.config.json", AiConfigSchema);
 
     return {
       planMode: true,

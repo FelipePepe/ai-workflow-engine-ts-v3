@@ -1,4 +1,6 @@
 import "dotenv/config";
+import { JsonConfigLoader } from './json-config-loader.js';
+import { LlmConfigSchema, type LlmConfig } from './schemas/llm.schema.js';
 
 export const settings = {
   appName: process.env.APP_NAME ?? "AI Workflow Engine TS V3 JSON",
@@ -11,3 +13,20 @@ export const settings = {
   workspaceRoot: process.env.WORKSPACE_ROOT ?? ".ai-workspaces",
   maxParallelAgents: Number(process.env.MAX_PARALLEL_AGENTS ?? 5)
 };
+
+const DEFAULT_LLM_CONFIG: LlmConfig = {
+  provider: 'ollama',
+  ollama: { baseUrl: 'http://localhost:11434', model: 'llama3.2' },
+};
+
+export async function loadLlmConfig(): Promise<LlmConfig> {
+  const loader = new JsonConfigLoader();
+  try {
+    return await loader.load<LlmConfig>('config/llm.json', LlmConfigSchema);
+  } catch (err) {
+    if (err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return DEFAULT_LLM_CONFIG;
+    }
+    throw err;
+  }
+}

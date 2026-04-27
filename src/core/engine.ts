@@ -2,27 +2,46 @@ import crypto from "node:crypto";
 import type { AgentContext } from "../agents/base-agent.js";
 import { DiscoveryAgent } from "../agents/discovery-agent.js";
 import { SpecAgent } from "../agents/spec-agent.js";
+import type { LlmClient } from "../llm/llm-client.js";
 import { settings } from "../config/settings.js";
 import { MemoryStore } from "../memory/memory-store.js";
 import type { SddSpec } from "../schemas/spec.schema.js";
 import type { TaskInput } from "../schemas/task.schema.js";
+import type { IdeaInput, PipelineResult } from "../schemas/pipeline.schema.js";
 import { WorkspaceManager } from "../workspace/workspace-manager.js";
+import type { WebSocketManager } from "../websocket/websocket-manager.js";
 import { Evaluator } from "./evaluator.js";
 import { GitFlowService } from "./gitflow.js";
 import { Improver } from "./improver.js";
 import { AgentOrchestrator } from "./orchestrator.js";
 import { Planner } from "./planner.js";
+import { PipelineOrchestrator } from "./pipeline-orchestrator.js";
 
 export class SelfImprovementEngine {
   private readonly discoveryAgent = new DiscoveryAgent();
-  private readonly specAgent = new SpecAgent();
+  private readonly specAgent: SpecAgent;
   private readonly planner = new Planner();
-  private readonly orchestrator = new AgentOrchestrator();
+  private readonly orchestrator: AgentOrchestrator;
   private readonly evaluator = new Evaluator();
   private readonly improver = new Improver();
   private readonly memory = new MemoryStore();
   private readonly gitflow = new GitFlowService();
   private readonly workspaceManager = new WorkspaceManager();
+  private wsManager: WebSocketManager | null = null;
+
+  constructor(private readonly llmClient: LlmClient | null = null) {
+    this.specAgent = new SpecAgent(llmClient);
+    this.orchestrator = new AgentOrchestrator(llmClient);
+  }
+
+  setWsManager(wsManager: WebSocketManager): void {
+    this.wsManager = wsManager;
+  }
+
+  async runPipeline(idea: IdeaInput): Promise<PipelineResult> {
+    const pipeline = new PipelineOrchestrator(this.llmClient, this.wsManager);
+    return pipeline.run(idea);
+  }
 
   async createPlanOnly(task: TaskInput): Promise<Record<string, unknown>> {
     const runId = crypto.randomUUID().slice(0, 8);
@@ -55,46 +74,67 @@ export class SelfImprovementEngine {
     const spec = planned.spec as SddSpec;
     const plan = planned.plan as any;
 
-    const workspaces = await this.workspaceManager.createParallelWorkspaces(
-      runId,
-      ["developer", "qa", "security", "reviewer", "documentation"]
-    );
+    const ts = () => new Date().toISOString();
+    this.wsManager?.emit(runId, { type: "run_start", runId, timestamp: ts() });
 
-    const context: AgentContext = {
-      runId,
-      task,
-      discovery,
-      projectSpec,
-      spec,
-      plan,
-      dryRun: settings.dryRun || !discovery.canProceed || plan.approvalRequired,
-      branch,
-      workspaces,
-      startedAt: new Date().toISOString()
-    };
+    try {
+      const existingPath = (task.taskType === "evolutive" || task.taskType === "incident")
+        ? task.workspacePath
+        : undefined;
 
-    const agentResults = await this.orchestrator.runPlan(plan, context);
-    const evaluation = this.evaluator.evaluate(context, agentResults);
-    const improvements = this.improver.suggestImprovements(evaluation, discovery);
+      const workspaces = await this.workspaceManager.createParallelWorkspaces(
+        runId,
+        ["developer", "qa", "security", "reviewer", "documentation"],
+        existingPath
+      );
 
-    const experience = {
-      runId,
-      branch,
-      workspaces,
-      task,
-      discovery,
-      projectSpec,
-      spec,
-      plan,
-      agentResults,
-      evaluation,
-      improvements,
-      gitflowPolicy: this.gitflow.policy(),
-      dryRun: context.dryRun,
-      finishedAt: new Date().toISOString()
-    };
+      const context: AgentContext = {
+        runId,
+        task,
+        discovery,
+        projectSpec,
+        spec,
+        plan,
+        dryRun: settings.dryRun || !discovery.canProceed || plan.approvalRequired,
+        branch,
+        workspaces,
+        workspacePath: task.workspacePath,
+        taskType: task.taskType ?? "new_project",
+        startedAt: new Date().toISOString()
+      };
 
-    await this.memory.save(experience);
-    return experience;
+      const agentResults = await this.orchestrator.runPlan(plan, context);
+      for (const result of agentResults) {
+        this.wsManager?.emit(runId, { type: "agent_complete", runId, agentName: result.agentName, status: result.status, timestamp: ts() });
+      }
+
+      const evaluation = this.evaluator.evaluate(context, agentResults);
+      const improvements = this.improver.suggestImprovements(evaluation, discovery);
+
+      const experience = {
+        runId,
+        branch,
+        workspaces,
+        task,
+        discovery,
+        projectSpec,
+        spec,
+        plan,
+        agentResults,
+        evaluation,
+        improvements,
+        gitflowPolicy: this.gitflow.policy(),
+        dryRun: context.dryRun,
+        finishedAt: new Date().toISOString()
+      };
+
+      await this.memory.save(experience);
+      this.wsManager?.emit(runId, { type: "run_finish", runId, timestamp: ts() });
+      return experience;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.wsManager?.emit(runId, { type: "error", runId, message, timestamp: ts() });
+      throw err;
+    }
   }
 }

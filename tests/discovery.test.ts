@@ -7,7 +7,8 @@ describe("DiscoveryAgent", () => {
       title: "Crear API con Fastify",
       description: "Crear endpoint en TypeScript usando Fastify",
       constraints: [],
-      priority: "medium"
+      priority: "medium",
+      taskType: "new_project"
     });
 
     expect(result.projectSpec.projectType).toBe("api");

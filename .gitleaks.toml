@@ -1,0 +1,15 @@
+title = "Gitleaks Configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allowlist for test fixtures and known safe values"
+paths = [
+  '''tests/.*\.test\.ts''',
+]
+regexTarget = "match"
+regexes = [
+  # fake PATs used as test fixtures — not real credentials
+  '''ghp_test''',
+]

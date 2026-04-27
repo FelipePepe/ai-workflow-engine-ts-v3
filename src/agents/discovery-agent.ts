@@ -1,4 +1,5 @@
 import { JsonConfigLoader } from "../config/json-config-loader.js";
+import { ProjectConfigSchema } from "../config/schemas/project.schema.js";
 import { settings } from "../config/settings.js";
 import { ProfileStore } from "../profile/profile-store.js";
 import type { DiscoveryQuestion, DiscoveryResult } from "../schemas/discovery.schema.js";
@@ -13,7 +14,7 @@ export class DiscoveryAgent {
 
   async analyze(task: TaskInput): Promise<DiscoveryResult> {
     const profile = await this.profileStore.get();
-    const projectConfig = await this.configLoader.load<Partial<ProjectSpec>>("config/project.json");
+    const projectConfig = await this.configLoader.load("config/project.json", ProjectConfigSchema) as Partial<ProjectSpec>;
 
     const rawSpec: Partial<ProjectSpec> = {
       ...projectConfig,

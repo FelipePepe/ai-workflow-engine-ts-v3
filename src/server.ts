@@ -1,7 +1,8 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import websocket from "@fastify/websocket";
-import { settings } from "./config/settings.js";
+import { settings, loadLlmConfig } from "./config/settings.js";
+import { createLlmClient } from "./llm/llm-factory.js";
 import { registerDiscoveryRoutes } from "./api/discovery.routes.js";
 import { registerPlanRoutes } from "./api/plan.routes.js";
 import { registerTaskRoutes } from "./api/tasks.routes.js";
@@ -9,11 +10,31 @@ import { registerConfigRoutes } from "./api/config.routes.js";
 import { registerMemoryRoutes } from "./api/memory.routes.js";
 import { registerMetricsRoutes } from "./api/metrics.routes.js";
 import { registerWebSocketRoutes } from "./websocket/websocket.routes.js";
+import { pipelineRoutes } from "./api/pipeline.routes.js";
+import type { FastifyError } from "fastify";
+import type { ErrorResponseBody } from "./types/errors.js";
+import { SelfImprovementEngine } from "./core/engine.js";
+import { websocketManager } from "./websocket/websocket-manager.js";
 
 const app = Fastify({ logger: true });
 
+app.setErrorHandler((error: FastifyError, _request, reply) => {
+  const body: ErrorResponseBody = {
+    error: error.message,
+    code: error.code ?? "INTERNAL_ERROR",
+    details: process.env["APP_ENV"] === "dev" ? error.stack : undefined,
+  };
+  void reply.status(error.statusCode ?? 500).send(body);
+});
+
 await app.register(cors);
 await app.register(websocket);
+
+const llmConfig = await loadLlmConfig().catch(() => null);
+const llmClient = llmConfig ? createLlmClient(llmConfig) : null;
+const engine = new SelfImprovementEngine(llmClient);
+engine.setWsManager(websocketManager);
+app.decorate("engine", engine);
 
 app.get("/", async () => ({
   name: settings.appName,
@@ -28,5 +49,6 @@ registerConfigRoutes(app);
 registerMemoryRoutes(app);
 registerMetricsRoutes(app);
 registerWebSocketRoutes(app);
+await pipelineRoutes(app, engine);
 
 await app.listen({ port: settings.port, host: "0.0.0.0" });

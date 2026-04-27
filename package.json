@@ -1,6 +1,6 @@
 {
   "name": "ai-workflow-engine-ts-v3-json",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "AI Workflow Engine TypeScript V3 with JSON config, Plan Mode, parallel workspaces, sandbox permissions and review-pattern learning",
   "type": "module",
   "main": "dist/server.js",
@@ -9,17 +9,21 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "configure": "tsx scripts/configure-llm.ts",
+    "prepare": "lefthook install"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",
     "@fastify/websocket": "^11.0.1",
+    "@rolldown/binding-linux-x64-gnu": "^1.0.0-rc.17",
     "dotenv": "^16.4.7",
     "fast-glob": "^3.3.3",
     "fastify": "^5.2.1",
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@evilmartians/lefthook": "^2.1.6",
     "@types/node": "^22.10.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
