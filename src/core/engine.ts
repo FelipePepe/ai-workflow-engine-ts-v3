@@ -78,9 +78,14 @@ export class SelfImprovementEngine {
     this.wsManager?.emit(runId, { type: "run_start", runId, timestamp: ts() });
 
     try {
+      const existingPath = (task.taskType === "evolutive" || task.taskType === "incident")
+        ? task.workspacePath
+        : undefined;
+
       const workspaces = await this.workspaceManager.createParallelWorkspaces(
         runId,
-        ["developer", "qa", "security", "reviewer", "documentation"]
+        ["developer", "qa", "security", "reviewer", "documentation"],
+        existingPath
       );
 
       const context: AgentContext = {
@@ -93,6 +98,8 @@ export class SelfImprovementEngine {
         dryRun: settings.dryRun || !discovery.canProceed || plan.approvalRequired,
         branch,
         workspaces,
+        workspacePath: task.workspacePath,
+        taskType: task.taskType ?? "new_project",
         startedAt: new Date().toISOString()
       };
 

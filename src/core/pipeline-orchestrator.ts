@@ -136,7 +136,8 @@ export class PipelineOrchestrator {
       title: firstTask?.title ?? ctx.idea.title,
       description: firstTask?.description ?? ctx.idea.description,
       constraints: ctx.idea.constraints,
-      priority: firstTask?.priority ?? "medium"
+      priority: firstTask?.priority ?? "medium",
+      taskType: "new_project"
     };
   }
 }
